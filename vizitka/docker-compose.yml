@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  sports-crm:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    container_name: sports-crm-website
+    restart: unless-stopped
+    volumes:
+      # Опционально: для разработки можно замапить логи
+      - ./nginx-logs:/var/log/nginx

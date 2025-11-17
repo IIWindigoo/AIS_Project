@@ -1,0 +1,6 @@
+.venv/
+.env
+alembic.ini
+app/migrations
+**/__pycache__/
+.DS_Store
