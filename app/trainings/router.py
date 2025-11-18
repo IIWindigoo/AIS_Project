@@ -31,8 +31,9 @@ async def create_training(training_data: STrainingAdd,
     Доступ только у администратора и тренера
     """
     training_dao = TrainingDAO(session)
+    user_dao = UsersDAO(session)
     # Проверка, существует ли тренер
-    trainer = await training_dao.find_one_or_none_by_id(training_data.trainer_id)
+    trainer = await user_dao.find_one_or_none_by_id(training_data.trainer_id)
     if not trainer or trainer.role.name != "trainer":
         raise TrainerNotFound
     # Проверка, существует ли помещение

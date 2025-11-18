@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.subscriptions.dao import SubscriptionDAO
-from app.subscriptions.schemas import SSubInfo, SSubFilter, SSubUpd
+from app.subscriptions.schemas import SSubInfo, SSubFilter, SSubUpd, SSubAdd
 from app.dependencies.dao_dep import get_session_with_commit, get_session_without_commit
 from app.dependencies.auth_dep import get_current_admin_user
 from app.exceptions import SubNotFound
@@ -21,10 +21,10 @@ async def get_all_subscriptions(session: AsyncSession = Depends(get_session_with
     return await SubscriptionDAO(session).find_all()
 
 @router.post("/", summary="Создать абонемент")
-async def create_subscription(sub_data: SSubInfo,
-                      session: AsyncSession = Depends(get_session_with_commit),
-                      user_data: User = Depends(get_current_admin_user)
-                      ) -> SSubInfo | dict:
+async def create_subscription(sub_data: SSubAdd,
+                              session: AsyncSession = Depends(get_session_with_commit),
+                              user_data: User = Depends(get_current_admin_user)
+                              ) -> SSubInfo | dict:
     """
     Создает новый абонемент.
     Доступ только у администратора 

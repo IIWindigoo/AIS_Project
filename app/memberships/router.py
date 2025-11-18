@@ -8,7 +8,7 @@ from app.users.models import User
 from app.subscriptions.dao import SubscriptionDAO
 from app.memberships.dao import MembershipDAO, SubRequestDAO
 from app.memberships.schemas import (SMembershipCreate, SSubReqUpdate, SSubReqInfo, SMembershipInfo,
-                                     SSubReqCreate)
+                                     SSubReqCreate, SFilter)
 from app.exceptions import (RequestOnlyClient, SubNotFound, MembershipIsActive, RequestIsPending)
 
 
@@ -33,15 +33,13 @@ async def create_sub_request(data: SSubReqCreate,
     if not subscription:
         raise SubNotFound
     # Если есть активный абонемент, то подать новую заявку нельзя
-    active_membership = await membership_dao.find_one_or_none(
-        filters={"user_id": user_data.id, "status": "active"}
-    )
+    filters = SFilter(user_id=user_data.id, status="active")
+    active_membership = await membership_dao.find_one_or_none(filters=filters)
     if active_membership:
         raise MembershipIsActive
     # Если есть активная заявка, то подать новую заявку нельзя
-    existing_request = await sr_dao.find_one_or_none(
-        filters={"user_id": user_data.id, "status": "pending"}
-    )
+    filters = SFilter(user_id=user_data.id, status="pending")
+    existing_request = await sr_dao.find_one_or_none(filters=filters)
     if existing_request:
         raise RequestIsPending
     # Создание заявки 

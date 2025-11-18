@@ -32,3 +32,7 @@ class SMembershipInfo(MembershipBase):
     id: int = Field(description="ID")
 
     model_config = ConfigDict(from_attributes=True)
+
+class SFilter(BaseModel):
+    user_id: int = Field(description="ID клиента")
+    status: str = Field(description="Статус заявки/абонемента")

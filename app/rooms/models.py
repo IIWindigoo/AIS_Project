@@ -7,7 +7,8 @@ class Room(Base):
     
     title: Mapped[str]
     capacity: Mapped[int]
-    training: Mapped[list["Training"]] = relationship(back_populates="room", cascade="all, delete-orphan") # type: ignore
+    
+    trainings: Mapped[list["Training"]] = relationship(back_populates="room", cascade="all, delete-orphan") # type: ignore
 
     def __repr__(self):
         return (f"{self.__class__.__name__}(id={self.id}, title={self.title}, capacity={self.capacity})")

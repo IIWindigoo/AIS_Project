@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.rooms.schemas import SRoomInfo, SRoomFilter, SRoomUpd
+from app.rooms.schemas import SRoomInfo, SRoomFilter, SRoomUpd, SRoomAdd
 from app.rooms.dao import RoomDAO
 from app.dependencies.dao_dep import get_session_with_commit, get_session_without_commit
 from app.dependencies.auth_dep import get_current_admin_user
@@ -22,7 +22,7 @@ async def get_all_rooms(session: AsyncSession = Depends(get_session_without_comm
     return await RoomDAO(session).find_all()
 
 @router.post("/", summary="Создать помещение")
-async def create_room(room_data: SRoomInfo,
+async def create_room(room_data: SRoomAdd,
                       session: AsyncSession = Depends(get_session_with_commit),
                       user_data: User = Depends(get_current_admin_user)
                       ) -> SRoomInfo | dict:
