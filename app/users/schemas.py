@@ -58,3 +58,6 @@ class SUserInfo(UserBase):
     @computed_field
     def role_id(self) -> int:
         return self.role.id
+    
+class SUserShort(UserBase):
+    id: int = Field(description="Идентификатор пользователя")

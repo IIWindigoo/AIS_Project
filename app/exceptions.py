@@ -57,6 +57,15 @@ RequestOnlyClient = HTTPException(status_code=status.HTTP_403_FORBIDDEN,
 RequestIsPending = HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                  detail="У вас уже есть активная заявка. Дождитесь решения администратора.")
 
+RequestNotFound = HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                             detail="Указанная заявка не найдена")
+
+RequestAlreadyAccept = HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                 detail="Заявка уже обработана")
+
+RequestBadStatus = HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                              detail="Некорректный статус. Доступны: approved, rejected.")
+
 MembershipIsActive = HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
                                    detail="У вас уже есть действующий абонемент. Новая заявка будет доступна после его окончания.")
 

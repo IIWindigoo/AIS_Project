@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime, date
+from app.users.schemas import SUserShort
+from app.subscriptions.schemas import SSubInfo
 
 
 class SSubReqCreate(BaseModel):
@@ -16,6 +18,18 @@ class SSubReqInfo(BaseModel):
     created_at: datetime = Field(description="Дата создания заявки")
 
     model_config = ConfigDict(from_attributes=True)
+
+class SSubReqInfoFull(BaseModel):
+    id: int = Field(description="ID заявки")
+    status: str = Field(description="Статус заявки")
+    user: SUserShort = Field(description="Информация о клиенте")
+    subscription: SSubInfo = Field(description="Информация об абонементе")
+    created_at: datetime = Field(description="Дата создания заявки")
+
+    model_config = ConfigDict(from_attributes=True)
+
+class SSubReqFilter(BaseModel):
+    id: int = Field(description="ID заявки")
 
 class MembershipBase(BaseModel):
     user_id: int | None = Field(default=None, description="ID клиента")

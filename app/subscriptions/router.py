@@ -79,7 +79,7 @@ async def update_sub(sub_id: int,
     sub = await sub_dao.find_one_or_none_by_id(sub_id)
     if not sub:
         raise SubNotFound
-    # Обновление информации о абонементе
+    # Обновление информации об абонементе
     filters = SSubFilter(id=sub_id)
     update_values = SSubUpd(**data.model_dump(exclude_unset=True))
     updated_count = await sub_dao.update(
