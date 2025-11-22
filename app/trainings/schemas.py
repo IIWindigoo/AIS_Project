@@ -35,7 +35,7 @@ class STrainingUpd(BaseModel):
 class STrainingShort(BaseModel):
     id: int = Field(description="ID тренировки")
     title: str = Field(min_length=2, max_length=50, description="Название тренировки, от 2 до 50 символов")
-    date: dt = Field(desription="Дата проведения тренировки")
+    date: dt = Field(description="Дата проведения тренировки")
     start_time: time = Field(description="Время начала тренировки")
     end_time: time = Field(description="Время окончания тренировки")
 
