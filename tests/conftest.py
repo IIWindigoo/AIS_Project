@@ -15,6 +15,7 @@ from app.users.auth import get_password_hash
 from app.users.models import Role, User
 from app.rooms.models import Room
 from app.trainings.models import Training
+from app.subscriptions.models import Subscription
 
 # Тестовая база данных 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -114,6 +115,17 @@ async def training_fixture(db_session, trainer_fixture, room_fixture):
     await db_session.refresh(training)
     return training
 
+@pytest_asyncio.fixture
+async def subscription_fixture(db_session):
+    subscription = Subscription(
+        title="Абонемент №1",
+        price=3000,
+        duration_days=15,
+    )
+    db_session.add(subscription)
+    await db_session.commit()
+    await db_session.refresh(subscription)
+    return subscription
 
 """
 @pytest_asyncio.fixture(scope="function")
