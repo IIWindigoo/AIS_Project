@@ -30,4 +30,4 @@ class User(Base):
     sub_requests: Mapped["SubRequest"] = relationship(back_populates="user", cascade="all, delete-orphan") # type: ignore
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(id={self.id})"
+        return f"{self.__class__.__name__}(id={self.id}, email={self.email})"

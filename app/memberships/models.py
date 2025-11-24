@@ -29,3 +29,7 @@ class SubRequest(Base):
 
     user: Mapped["User"] = relationship(back_populates="sub_requests") # type: ignore
     subscription: Mapped["Subscription"] = relationship(back_populates="sub_requests") # type: ignore
+
+    def __repr__(self):
+        return (f"{self.__class__.__name__}(id={self.id}, user_id={self.user_id}, "
+                f"subscription_id={self.subscription_id}, status={self.status})")

@@ -8,7 +8,7 @@ from app.users.models import User
 from app.subscriptions.dao import SubscriptionDAO
 from app.memberships.dao import MembershipDAO, SubRequestDAO
 from app.memberships.schemas import (SMembershipCreate, SSubReqUpdate, SSubReqInfo, SMembershipInfo,
-                                     SSubReqCreate, SFilter, SSubReqFilter, SSubReqInfoFull)
+                                     SSubReqCreate, SFilter, SSubReqFilter, SSubReqInfoFull, SSubReqAdd)
 from app.exceptions import (RequestOnlyClient, SubNotFound, MembershipIsActive, RequestIsPending,
                             RequestNotFound, RequestAlreadyAccept, RequestBadStatus)
 
@@ -44,9 +44,8 @@ async def create_sub_request(data: SSubReqCreate,
     if existing_request:
         raise RequestIsPending
     # Создание заявки 
-    new_request = await sr_dao.add(
-        values={"user_id": user_data.id, "subscription_id": data.subscription_id}
-    )
+    values = SSubReqAdd(user_id=user_data.id, subscription_id=data.subscription_id)
+    new_request = await sr_dao.add(values=values)
     return new_request
 
 @router.patch("/request/{request_id}/", summary="Изменить статус заявки на абонемент")

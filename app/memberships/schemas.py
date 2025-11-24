@@ -7,6 +7,9 @@ from app.subscriptions.schemas import SSubInfo
 class SSubReqCreate(BaseModel):
     subscription_id: int = Field(description="ID абонемента")
 
+class SSubReqAdd(SSubReqCreate):
+    user_id: int = Field(description="ID клиента")
+
 class SSubReqUpdate(BaseModel):
     status: str = Field(description="Статус заявки")
 
@@ -32,8 +35,6 @@ class SSubReqFilter(BaseModel):
     id: int = Field(description="ID заявки")
 
 class MembershipBase(BaseModel):
-    user_id: int | None = Field(default=None, description="ID клиента")
-    subscription_id: int | None = Field(default=None, description="ID абонемента")
     start_date: date | None = Field(default=None, description="Дата начала действия абонемента")
     end_date: date | None = Field(default=None, description="Дата окончания действия абонемента")
     status: str | None = Field(default=None, description="Статус абонемента. Активен или нет")
@@ -46,6 +47,12 @@ class SMembershipInfo(MembershipBase):
     id: int = Field(description="ID")
 
     model_config = ConfigDict(from_attributes=True)
+
+class SMembershipUpd(BaseModel):
+    status: str | None = Field(default=None, description="Статус абонемента. Активен или нет")
+
+class SMembershipFilter(BaseModel):
+    user_id: int = Field(description="ID клиента")
 
 class SFilter(BaseModel):
     user_id: int = Field(description="ID клиента")
