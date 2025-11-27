@@ -5,10 +5,10 @@ class SRoomAdd(BaseModel):
     title: str = Field(min_length=2, max_length=30, description="Название помещения, от 2 до 30 символов")
     capacity: int = Field(description="Вместимость помещения")
 
-    
-
 class SRoomInfo(SRoomAdd):
     id: int = Field(description="ID помещения")
+
+    model_config = ConfigDict(from_attributes=True)
     
 class SRoomFilter(BaseModel):
     id: int = Field(description="ID помещения")

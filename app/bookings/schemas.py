@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
+
 from app.trainings.schemas import STrainingShort
 
 class SBookingAdd(BaseModel):
