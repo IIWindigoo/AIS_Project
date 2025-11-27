@@ -87,6 +87,12 @@ async def get_current_admin_user(current_user: User = Depends(get_current_user))
         return current_user
     raise ForbiddenException
 
+async def get_current_trainer_user(current_user: User = Depends(get_current_user)) -> User:
+    """Проверяем права пользователя как тренера."""
+    if current_user.role.id in [2]:
+        return current_user
+    raise ForbiddenException
+
 async def get_current_trainer_admin_user(current_user: User = Depends(get_current_user)) -> User:
     """Проверяем права пользователя как трененра и администратора."""
     if current_user.role.id in [2, 3]:
