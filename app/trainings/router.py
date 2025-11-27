@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.trainings.dao import TrainingDAO
-from app.trainings.schemas import STrainingInfo, STrainingAdd, STrainingFilter, STrainingUpd
+from app.trainings.schemas import (STrainingInfo, STrainingAdd, STrainingFilter, STrainingUpd, 
+                                   STrainingWithBookings)
 from app.dependencies.dao_dep import get_session_with_commit, get_session_without_commit
-from app.dependencies.auth_dep import get_current_trainer_admin_user
+from app.dependencies.auth_dep import get_current_trainer_admin_user, get_current_trainer_user
 from app.exceptions import TrainingNotFound, TrainingForbiddenException, TrainerNotFound, RoomNotFound
 from app.users.models import User
 from app.users.dao import UsersDAO
@@ -109,3 +110,10 @@ async def update_training(training_id: int,
         raise HTTPException(status_code=400, detail="Обновление не выполнено")
     updated = await training_dao.find_one_or_none_by_id(training_id)
     return STrainingInfo.model_validate(updated)
+
+@router.get("/my/", summary="Мои тренировки с участниками", response_model=list[STrainingWithBookings])
+async def get_my_trainings(session: AsyncSession = Depends(get_session_without_commit),
+                           user_data: User = Depends(get_current_trainer_user)):
+    trainer_id = user_data.id
+    trainings = await TrainingDAO(session).find_by_trainer_with_clients(trainer_id)
+    return trainings
