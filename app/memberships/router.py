@@ -8,9 +8,11 @@ from app.users.models import User
 from app.subscriptions.dao import SubscriptionDAO
 from app.memberships.dao import MembershipDAO, SubRequestDAO
 from app.memberships.schemas import (SMembershipCreate, SSubReqUpdate, SSubReqInfo, SMembershipInfo,
-                                     SSubReqCreate, SFilter, SSubReqFilter, SSubReqInfoFull, SSubReqAdd)
+                                     SSubReqCreate, SFilter, SSubReqFilter, SSubReqInfoFull, SSubReqAdd,
+                                     SMembershipInfoFull)
 from app.exceptions import (RequestOnlyClient, SubNotFound, MembershipIsActive, RequestIsPending,
-                            RequestNotFound, RequestAlreadyAccept, RequestBadStatus)
+                            RequestNotFound, RequestAlreadyAccept, RequestBadStatus, 
+                            ActiveMembershipNofFound, OnlyForClient)
 
 
 router = APIRouter(prefix="/memberships", tags=["Memberships"])
@@ -95,7 +97,7 @@ async def update_sub_request_status(request_id: int,
         values=data
     )
     if updated_count == 0:
-        raise HTTPException(status_code=400, detail="Обновление не выполнено")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Обновление не выполнено")
 
     updated_request = await sr_dao.find_one_or_none_by_id(request_id)
     return SSubReqInfo.model_validate(updated_request)
@@ -108,3 +110,33 @@ async def get_all_requests(session: AsyncSession = Depends(get_session_without_c
     Доступ только у админа.
     """
     return await SubRequestDAO(session).find_requests_with_data()
+
+@router.get("/my/", response_model=SMembershipInfo, summary="Получить информацию о своем абонементе")
+async def get_my_membership(session: AsyncSession = Depends(get_session_without_commit),
+                            user_data: User = Depends(get_current_user)):
+    """
+    Клиент получает информацию о своем активном абонементе.
+    Доступ у клиента.
+    """
+    membership_dao = MembershipDAO(session)
+    # Проверка, что только клиент может запрашивать свой абонемент
+    if user_data.role.name != "client":
+        raise OnlyForClient
+    # Поиск активного абонемента
+    filters = SFilter(user_id=user_data.id, status="active")
+    membership = await membership_dao.find_one_or_none(filters=filters)
+    if not membership:
+        raise ActiveMembershipNofFound
+    return membership
+
+@router.get("/all/", response_model=list[SMembershipInfoFull], summary="Получить список всех абонементов")
+async def get_all_memberships(session: AsyncSession = Depends(get_session_without_commit),
+                              user_data: User = Depends(get_current_admin_user)):
+    """
+    Админ получает список всех абонементов клиентов.
+    Доступ только у админа.
+    """
+    membership_dao = MembershipDAO(session)
+    # Получение всех абонементов с полной информацией (пользователь + подписка)
+    memberships = await membership_dao.find_memberships_with_data()
+    return memberships

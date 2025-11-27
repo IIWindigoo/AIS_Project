@@ -9,6 +9,24 @@ from loguru import logger
 class MembershipDAO(BaseDAO):
     model = Membership
 
+    async def find_memberships_with_data(self):
+        logger.info("Поиск действующих абонементов с загрузкой user и subscription")
+        try:
+            query = (
+                select(self.model)
+                .options(
+                    selectinload(self.model.user),
+                    selectinload(self.model.subscription)
+                )
+            )
+            result = await self._session.execute(query)
+            records = result.scalars().all()
+            logger.info(f"Найдено {len(records)} действующих абонементов.")
+            return records
+        except Exception as e:
+            logger.error(f"Ошибка при поиске действующих абонементов: {e}")
+            raise
+
 class SubRequestDAO(BaseDAO):
     model = SubRequest
 
