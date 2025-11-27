@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import time, date as dt
 
+from app.users.schemas import SUserShort
+
 
 class TrainingBase(BaseModel):
     title: str = Field(min_length=2, max_length=50, description="Название тренировки, от 2 до 50 символов")
@@ -40,3 +42,12 @@ class STrainingShort(BaseModel):
     end_time: time = Field(description="Время окончания тренировки")
 
     model_config = ConfigDict(from_attributes=True)
+
+class SBookingWithUser(BaseModel):
+    id: int = Field(description="ID бронирования")
+    user: SUserShort = Field(description="Клиент")
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class STrainingWithBookings(STrainingShort):
+    bookings: list[SBookingWithUser] = Field(default=[], description="Список бронирований")
