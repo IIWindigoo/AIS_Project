@@ -425,7 +425,7 @@ async function handleApproveRequest(requestId) {
         try {
             await api.updateRequestStatus(requestId, 'approved');
             utils.showNotification('Заявка одобрена! Абонемент активирован.', 'success');
-            pages.admin();
+            pages.admin(adminState.usersPage, adminState.requestsPage, adminState.membershipsPage, adminState.roomsPage);
         } catch (error) {
             utils.showNotification('Ошибка: ' + error.message, 'error');
         }
@@ -446,7 +446,7 @@ async function handleRejectRequest(requestId) {
         try {
             await api.updateRequestStatus(requestId, 'rejected');
             utils.showNotification('Заявка отклонена.', 'success');
-            pages.admin();
+            pages.admin(adminState.usersPage, adminState.requestsPage, adminState.membershipsPage, adminState.roomsPage);
         } catch (error) {
             utils.showNotification('Ошибка: ' + error.message, 'error');
         }
@@ -457,22 +457,131 @@ async function handleRejectRequest(requestId) {
 let adminState = {
     usersPage: 1,
     requestsPage: 1,
-    membershipsPage: 1
+    membershipsPage: 1,
+    roomsPage: 1
 };
 
 function handleUsersPageChange(page) {
     adminState.usersPage = page;
-    pages.admin(adminState.usersPage, adminState.requestsPage, adminState.membershipsPage);
+    pages.admin(adminState.usersPage, adminState.requestsPage, adminState.membershipsPage, adminState.roomsPage);
 }
 
 function handleRequestsPageChange(page) {
     adminState.requestsPage = page;
-    pages.admin(adminState.usersPage, adminState.requestsPage, adminState.membershipsPage);
+    pages.admin(adminState.usersPage, adminState.requestsPage, adminState.membershipsPage, adminState.roomsPage);
 }
 
 function handleMembershipsPageChange(page) {
     adminState.membershipsPage = page;
-    pages.admin(adminState.usersPage, adminState.requestsPage, adminState.membershipsPage);
+    pages.admin(adminState.usersPage, adminState.requestsPage, adminState.membershipsPage, adminState.roomsPage || 1);
+}
+
+function handleRoomsPageChange(page) {
+    adminState.roomsPage = page;
+    pages.admin(adminState.usersPage, adminState.requestsPage, adminState.membershipsPage, adminState.roomsPage);
+}
+
+async function handleShowAddRoomModal() {
+    const modalContent = `
+        <form id="addRoomForm">
+            <div class="form-group">
+                <label class="form-label">Название помещения *</label>
+                <input type="text" name="title" class="form-input" required minlength="2" maxlength="30" placeholder="Например: Зал №1">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Вместимость *</label>
+                <input type="number" name="capacity" class="form-input" required min="1" max="1000" placeholder="Количество человек">
+            </div>
+        </form>
+    `;
+
+    const result = await utils.showModal(
+        'Добавить помещение',
+        modalContent,
+        [
+            { text: 'Отмена', action: 'cancel', type: 'secondary' },
+            { text: 'Добавить', action: 'confirm', type: 'primary' }
+        ]
+    );
+
+    if (result === 'confirm') {
+        const form = document.getElementById('addRoomForm');
+        const formData = new FormData(form);
+        const data = {
+            title: formData.get('title'),
+            capacity: parseInt(formData.get('capacity'))
+        };
+
+        try {
+            await api.createRoom(data);
+            utils.showNotification('Помещение успешно добавлено', 'success');
+            pages.admin(adminState.usersPage, adminState.requestsPage, adminState.membershipsPage, adminState.roomsPage || 1);
+        } catch (error) {
+            utils.showNotification('Ошибка создания помещения: ' + error.message, 'error');
+        }
+    }
+}
+
+async function handleEditRoom(roomId, currentTitle, currentCapacity) {
+    const modalContent = `
+        <form id="editRoomForm">
+            <div class="form-group">
+                <label class="form-label">Название помещения *</label>
+                <input type="text" name="title" class="form-input" required minlength="2" maxlength="30" value="${currentTitle}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Вместимость *</label>
+                <input type="number" name="capacity" class="form-input" required min="1" max="1000" value="${currentCapacity}">
+            </div>
+        </form>
+    `;
+
+    const result = await utils.showModal(
+        'Редактировать помещение',
+        modalContent,
+        [
+            { text: 'Отмена', action: 'cancel', type: 'secondary' },
+            { text: 'Сохранить', action: 'confirm', type: 'primary' }
+        ]
+    );
+
+    if (result === 'confirm') {
+        const form = document.getElementById('editRoomForm');
+        const formData = new FormData(form);
+        const data = {
+            title: formData.get('title'),
+            capacity: parseInt(formData.get('capacity'))
+        };
+
+        try {
+            await api.updateRoom(roomId, data);
+            utils.showNotification('Помещение успешно обновлено', 'success');
+            pages.admin(adminState.usersPage, adminState.requestsPage, adminState.membershipsPage, adminState.roomsPage || 1);
+        } catch (error) {
+            utils.showNotification('Ошибка обновления помещения: ' + error.message, 'error');
+        }
+    }
+}
+
+async function handleDeleteRoom(roomId, roomTitle) {
+    const confirmed = await utils.showModal(
+        'Удаление помещения',
+        `Вы уверены, что хотите удалить помещение "${roomTitle}"?<br><br><strong>Внимание:</strong> Все связанные с ним тренировки также будут затронуты.`,
+        [
+            { text: 'Отмена', action: 'cancel', type: 'secondary' },
+            { text: 'Да, удалить', action: 'confirm', type: 'danger' }
+        ]
+    );
+
+    if (confirmed === 'confirm') {
+        try {
+            await api.deleteRoom(roomId);
+            utils.showNotification('Помещение успешно удалено', 'success');
+            pages.admin(adminState.usersPage, adminState.requestsPage, adminState.membershipsPage, adminState.roomsPage || 1);
+        } catch (error) {
+            utils.showNotification('Ошибка удаления помещения: ' + error.message, 'error');
+        }
+    }
 }
 
 function handleToggleRequest(requestId) {
@@ -504,7 +613,7 @@ router.addRoute('/my-trainings', pages.myTrainings);
 router.addRoute('/profile', pages.profile);
 router.addRoute('/admin', () => {
     // Reset admin pagination state when navigating to admin page
-    adminState = { usersPage: 1, requestsPage: 1, membershipsPage: 1 };
+    adminState = { usersPage: 1, requestsPage: 1, membershipsPage: 1, roomsPage: 1 };
     return pages.admin();
 });
 router.addRoute('/404', pages.notFound);

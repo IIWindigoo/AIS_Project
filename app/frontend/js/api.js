@@ -194,6 +194,31 @@ class ApiClient {
     async getAllUsers() {
         return this.request('/users/all_users/');
     }
+
+    // Rooms endpoints
+    async getRooms() {
+        return this.request('/rooms/');
+    }
+
+    async createRoom(data) {
+        return this.request('/rooms/', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async updateRoom(roomId, data) {
+        return this.request(`/rooms/${roomId}/`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async deleteRoom(roomId) {
+        return this.request(`/rooms/${roomId}/`, {
+            method: 'DELETE',
+        });
+    }
 }
 
 const api = new ApiClient();

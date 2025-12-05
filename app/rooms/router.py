@@ -12,12 +12,10 @@ from app.users.models import User
 router = APIRouter(prefix="/rooms", tags=["Rooms"])
 
 @router.get("/", summary="Получить все помещения")
-async def get_all_rooms(session: AsyncSession = Depends(get_session_without_commit),
-                        user_data: User = Depends(get_current_admin_user)
-                        ) -> list[SRoomInfo]:
+async def get_all_rooms(session: AsyncSession = Depends(get_session_without_commit)) -> list[SRoomInfo]:
     """
     Возвращает список всех существующих помещений
-    Доступ только у администратора
+    Доступ для всех пользователей
     """
     return await RoomDAO(session).find_all()
 

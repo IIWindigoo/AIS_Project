@@ -710,7 +710,7 @@ const pages = {
         }
     },
 
-    async admin(usersPage = 1, requestsPage = 1, membershipsPage = 1) {
+    async admin(usersPage = 1, requestsPage = 1, membershipsPage = 1, roomsPage = 1) {
         const user = authManager.getUser();
         const userRole = user?.role?.name || user?.role_name;
 
@@ -726,10 +726,11 @@ const pages = {
 
         try {
             // Load all data in parallel
-            const [users, requests, memberships] = await Promise.all([
+            const [users, requests, memberships, rooms] = await Promise.all([
                 api.getAllUsers(),
                 api.getAllRequests(),
-                api.getAllMemberships()
+                api.getAllMemberships(),
+                api.getRooms()
             ]);
 
             // Pagination settings
@@ -753,6 +754,12 @@ const pages = {
             const membershipsStart = (membershipsPage - 1) * itemsPerPage;
             const membershipsEnd = membershipsStart + itemsPerPage;
             const paginatedMemberships = memberships.slice(membershipsStart, membershipsEnd);
+
+            // Rooms pagination
+            const totalRoomsPages = Math.ceil(rooms.length / itemsPerPage);
+            const roomsStart = (roomsPage - 1) * itemsPerPage;
+            const roomsEnd = roomsStart + itemsPerPage;
+            const paginatedRooms = rooms.slice(roomsStart, roomsEnd);
 
             const content = `
                 <div class="container">
@@ -871,6 +878,47 @@ const pages = {
                                 </table>
                             </div>
                             ${components.pagination(membershipsPage, totalMembershipsPages, 'handleMembershipsPageChange')}
+                        `}
+                    </div>
+
+                    <!-- Rooms Section -->
+                    <div class="admin-section">
+                        <h2>Помещения (${rooms.length})</h2>
+                        <button class="btn btn-primary" onclick="handleShowAddRoomModal()">+ Добавить помещение</button>
+
+                        ${rooms.length === 0 ? `
+                            <p class="empty-state-text">Нет помещений</p>
+                        ` : `
+                            <div class="admin-table-wrapper">
+                                <table class="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Название</th>
+                                            <th>Вместимость</th>
+                                            <th>Действия</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${paginatedRooms.map(room => `
+                                            <tr>
+                                                <td>${room.id}</td>
+                                                <td>${room.title}</td>
+                                                <td>${room.capacity} чел.</td>
+                                                <td class="action-buttons">
+                                                    <button class="btn btn-small btn-secondary" onclick="handleEditRoom(${room.id}, '${room.title}', ${room.capacity})">
+                                                        ✎ Редактировать
+                                                    </button>
+                                                    <button class="btn btn-small btn-danger" onclick="handleDeleteRoom(${room.id}, '${room.title}')">
+                                                        🗑 Удалить
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                            ${components.pagination(roomsPage, totalRoomsPages, 'handleRoomsPageChange')}
                         `}
                     </div>
                 </div>
