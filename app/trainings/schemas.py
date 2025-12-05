@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from datetime import time, date as dt
 
 from app.users.schemas import SUserShort
+from app.rooms.schemas import SRoomInfo
 
 
 class TrainingBase(BaseModel):
@@ -21,6 +22,9 @@ class STrainingInfo(TrainingBase):
     id: int = Field(description="ID тренировки")
     trainer_id: int = Field(description="ID тренера")
     room_id: int = Field(description="ID помещения")
+    room: SRoomInfo = Field(description="Помещение")
+
+    model_config = ConfigDict(from_attributes=True)
 
 class STrainingFilter(BaseModel):
     id: int = Field(description="ID тренировки")
@@ -40,6 +44,7 @@ class STrainingShort(BaseModel):
     date: dt = Field(description="Дата проведения тренировки")
     start_time: time = Field(description="Время начала тренировки")
     end_time: time = Field(description="Время окончания тренировки")
+    room: SRoomInfo = Field(description="Помещение")
 
     model_config = ConfigDict(from_attributes=True)
 

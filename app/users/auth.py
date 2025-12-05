@@ -42,20 +42,26 @@ def set_tokens(response: Response, user_id: int):
     access_token = new_tokens.get('access_token')
     refresh_token = new_tokens.get("refresh_token")
 
+    # Note: domain is not set explicitly, so cookies will be set for the current domain
+    # This allows cookies to work on both localhost and 127.0.0.1
     response.set_cookie(
         key="user_access_token",
         value=access_token,
         httponly=True,
-        secure=True,
-        samesite="lax"
+        secure=False,  # Set to True in production with HTTPS
+        samesite="lax",
+        max_age=3600,  # 1 hour
+        path="/"
     )
 
     response.set_cookie(
         key="user_refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=True,
-        samesite="lax"
+        secure=False,  # Set to True in production with HTTPS
+        samesite="lax",
+        max_age=604800,  # 7 days
+        path="/"
     )
 
 

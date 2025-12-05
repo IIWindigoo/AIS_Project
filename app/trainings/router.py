@@ -9,6 +9,7 @@ from app.dependencies.auth_dep import get_current_trainer_admin_user, get_curren
 from app.exceptions import TrainingNotFound, TrainingForbiddenException, TrainerNotFound, RoomNotFound
 from app.users.models import User
 from app.users.dao import UsersDAO
+from app.rooms.dao import RoomDAO
 
 
 router = APIRouter(prefix="/trainings", tags=["Trainings"])
@@ -33,19 +34,20 @@ async def create_training(training_data: STrainingAdd,
     """
     training_dao = TrainingDAO(session)
     user_dao = UsersDAO(session)
+    room_dao = RoomDAO(session)
     # Проверка, существует ли тренер
     trainer = await user_dao.find_one_or_none_by_id(training_data.trainer_id)
     if not trainer or trainer.role.name != "trainer":
         raise TrainerNotFound
     # Проверка, существует ли помещение
-    room = await training_dao.find_one_or_none_by_id(training_data.room_id)
+    room = await room_dao.find_one_or_none_by_id(training_data.room_id)
     if not room:
         raise RoomNotFound
     # Добавление тренировки
     new_training = await training_dao.add(values=training_data)
     if new_training:
         return STrainingInfo.model_validate(new_training)
-    return {"message": "Ошибка при добавлении заметки"}
+    return {"message": "Ошибка при добавлении тренировки"}
 
 @router.delete("/{training_id}/", summary="Удалить тренировку по ID")
 async def delete_training(training_id: int,
