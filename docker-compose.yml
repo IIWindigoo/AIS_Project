@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # PostgreSQL база данных
+  db:
+    image: postgres:16-alpine
+    container_name: rrrd_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME:-RRRD}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-5674}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rrrd_network
+
+  # FastAPI приложение
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rrrd_web
+    restart: always
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-RRRD}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-5674}
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: ${ALGORITHM:-HS256}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # Монтируем код для разработки (можно убрать для продакшена)
+      - ./app:/app/app
+      - ./alembic.ini:/app/alembic.ini
+    networks:
+      - rrrd_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  rrrd_network:
+    driver: bridge
