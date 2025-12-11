@@ -49,15 +49,16 @@ class ApiClient {
     }
 
     // Auth endpoints
-    async register(email, password, confirmPassword, name, surname) {
+    async register(email, password, confirmPassword, name, surname, phoneNumber) {
         return this.request('/users/register/', {
             method: 'POST',
             body: JSON.stringify({
                 email,
                 password,
                 confirm_password: confirmPassword,
-                name,
-                surname
+                first_name: name,
+                last_name: surname,
+                phone_number: phoneNumber
             }),
         });
     }

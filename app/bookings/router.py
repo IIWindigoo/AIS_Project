@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from app.bookings.dao import BookingDAO
 from app.bookings.schemas import SBookingAdd, SBookingInfo, SBookingAddFull
@@ -10,7 +10,7 @@ from app.dependencies.auth_dep import get_current_user
 from app.dependencies.dao_dep import get_session_with_commit, get_session_without_commit
 from app.trainings.dao import TrainingDAO
 from app.bookings.models import Booking
-from app.exceptions import BookingExist, BookingOnlyClient, TrainingNotFound, BookingNotFound
+from app.exceptions import BookingExist, BookingOnlyClient, TrainingNotFound, BookingNotFound, TrainingFullException
 
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
@@ -37,6 +37,12 @@ async def create_booking(booking_data: SBookingAdd,
     existing = await booking_dao.find_by_user(user_data.id)
     if any(b.training_id == booking_data.training_id for b in existing):
         raise BookingExist
+    # Проверка вместимости помещения
+    booking_count = await session.scalar(
+        select(func.count(Booking.id)).where(Booking.training_id == booking_data.training_id)
+    )
+    if booking_count >= training.room.capacity:
+        raise TrainingFullException
     # Создание записи на тренировку
     booking = await booking_dao.add(SBookingAddFull(training_id=booking_data.training_id, 
                                                    user_id=user_data.id))

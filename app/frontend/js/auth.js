@@ -39,9 +39,9 @@ class AuthManager {
         }
     }
 
-    async register(email, password, confirmPassword, name, surname) {
+    async register(email, password, confirmPassword, name, surname, phoneNumber) {
         try {
-            const response = await api.register(email, password, confirmPassword, name, surname);
+            const response = await api.register(email, password, confirmPassword, name, surname, phoneNumber);
             return { success: true, message: response.message };
         } catch (error) {
             return { success: false, message: error.message };

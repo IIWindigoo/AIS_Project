@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,7 +23,18 @@ async def get_all_trainings(session: AsyncSession = Depends(get_session_without_
     Возвращает список всех существующих тренировок.
     Доступ у всех
     """
-    return await TrainingDAO(session).find_all()
+    trainings = await TrainingDAO(session).find_all()
+    today = date.today()
+
+    # Фильтруем тренировки: показываем только будущие и сегодняшние
+    # Добавляем booking_count для каждой тренировки
+    result = []
+    for training in trainings:
+        if training.date >= today:  # Только будущие тренировки
+            training_dict = STrainingInfo.model_validate(training).model_dump()
+            training_dict['booking_count'] = len(training.bookings)
+            result.append(STrainingInfo(**training_dict))
+    return result
 
 @router.post("/", summary="Создать тренировку")
 async def create_training(training_data: STrainingAdd,
@@ -46,7 +59,11 @@ async def create_training(training_data: STrainingAdd,
     # Добавление тренировки
     new_training = await training_dao.add(values=training_data)
     if new_training:
-        return STrainingInfo.model_validate(new_training)
+        # Перезагружаем тренировку с relationships
+        training_full = await training_dao.find_one_or_none_by_id(new_training.id)
+        training_dict = STrainingInfo.model_validate(training_full).model_dump()
+        training_dict['booking_count'] = len(training_full.bookings)
+        return STrainingInfo(**training_dict)
     return {"message": "Ошибка при добавлении тренировки"}
 
 @router.delete("/{training_id}/", summary="Удалить тренировку по ID")
@@ -111,7 +128,10 @@ async def update_training(training_id: int,
     if updated_count == 0:
         raise HTTPException(status_code=400, detail="Обновление не выполнено")
     updated = await training_dao.find_one_or_none_by_id(training_id)
-    return STrainingInfo.model_validate(updated)
+    # Добавляем booking_count
+    updated_dict = STrainingInfo.model_validate(updated).model_dump()
+    updated_dict['booking_count'] = len(updated.bookings)
+    return STrainingInfo(**updated_dict)
 
 @router.get("/my/", summary="Мои тренировки с участниками", response_model=list[STrainingWithBookings])
 async def get_my_trainings(session: AsyncSession = Depends(get_session_without_commit),

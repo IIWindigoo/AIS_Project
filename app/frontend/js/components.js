@@ -66,6 +66,10 @@ const components = {
     },
 
     trainingCard(training, actions = []) {
+        const bookingCount = training.booking_count || 0;
+        const capacity = training.room?.capacity || 0;
+        const isFull = bookingCount >= capacity;
+
         return `
             <div class="training-card" data-training-id="${training.id}">
                 <div class="training-header">
@@ -82,10 +86,22 @@ const components = {
                             <span class="info-label">⏰ Время:</span>
                             <span class="info-value">${training.start_time?.slice(0, 5)} - ${training.end_time?.slice(0, 5)}</span>
                         </div>
+                        ${training.trainer ? `
+                            <div class="info-item">
+                                <span class="info-label">👤 Тренер:</span>
+                                <span class="info-value">${training.trainer.first_name || training.trainer.name} ${training.trainer.last_name || training.trainer.surname}</span>
+                            </div>
+                        ` : ''}
                         ${training.room ? `
                             <div class="info-item">
                                 <span class="info-label">🏠 Помещение:</span>
                                 <span class="info-value">${training.room.title}</span>
+                            </div>
+                        ` : ''}
+                        ${capacity > 0 ? `
+                            <div class="info-item">
+                                <span class="info-label">👥 Записалось:</span>
+                                <span class="info-value ${isFull ? 'text-danger' : ''}">${bookingCount} / ${capacity} ${isFull ? '(мест нет)' : ''}</span>
                             </div>
                         ` : ''}
                         ${training.description ? `
@@ -101,7 +117,7 @@ const components = {
                         ${actions.map(action => `
                             <button class="btn btn-${action.type}"
                                     onclick="${action.onclick}"
-                                    ${action.disabled ? 'disabled' : ''}>
+                                    ${action.disabled || (action.checkFull && isFull) ? 'disabled' : ''}>
                                 ${action.text}
                             </button>
                         `).join('')}

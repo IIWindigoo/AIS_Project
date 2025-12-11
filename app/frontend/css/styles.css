@@ -176,6 +176,12 @@ body {
     width: 100%;
 }
 
+/* Utility classes */
+.text-danger {
+    color: var(--danger);
+    font-weight: 600;
+}
+
 /* Home Page */
 .home-page {
     margin: 0;
@@ -564,6 +570,60 @@ body {
 .page-header h1 {
     font-size: 2rem;
     color: var(--dark);
+}
+
+/* Filters Section */
+.filters-section {
+    background: var(--white);
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+}
+
+.search-box {
+    margin-bottom: 1rem;
+}
+
+.search-input-wrapper {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.search-input-wrapper .form-input {
+    flex: 1;
+}
+
+.search-btn {
+    white-space: nowrap;
+    padding: 0.75rem 1.5rem;
+}
+
+.filter-controls {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.form-select {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    font-size: 1rem;
+    background: var(--white);
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.form-select:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.form-select:hover {
+    border-color: var(--gray);
 }
 
 /* Trainings Grid */
@@ -1635,5 +1695,17 @@ body {
     .admin-table th,
     .admin-table td {
         padding: 0.75rem;
+    }
+
+    .filters-section {
+        padding: 1rem;
+    }
+
+    .filter-controls {
+        flex-direction: column;
+    }
+
+    .form-select {
+        min-width: 100%;
     }
 }

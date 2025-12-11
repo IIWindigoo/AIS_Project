@@ -42,6 +42,9 @@ BookingExist = HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
 BookingNotFound = HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail="Запись на тренировку не найдена")
 
+TrainingFullException = HTTPException(status_code=status.HTTP_409_CONFLICT,
+                                      detail="На тренировке нет свободных мест")
+
 TrainerNotFound = HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail="Указанный тренер не найден или пользователь не является тренером")
 

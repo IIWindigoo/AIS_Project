@@ -11,10 +11,18 @@ class TrainingDAO(BaseDAO):
     model = Training
 
     async def find_all(self, **filter_by):
-        """Переопределяем find_all для загрузки room relationship"""
+        """Переопределяем find_all для загрузки room, trainer и bookings relationships"""
         logger.info(f"Поиск всех записей {self.model.__name__} по фильтрам: {filter_by}")
         try:
-            query = select(self.model).filter_by(**filter_by).options(selectinload(self.model.room))
+            query = (
+                select(self.model)
+                .filter_by(**filter_by)
+                .options(
+                    selectinload(self.model.room),
+                    selectinload(self.model.trainer),
+                    selectinload(self.model.bookings)
+                )
+            )
             result = await self._session.execute(query)
             records = result.scalars().all()
             logger.info(f"Найдено {len(records)} записей.")
@@ -24,10 +32,18 @@ class TrainingDAO(BaseDAO):
             raise
 
     async def find_one_or_none_by_id(self, data_id: int):
-        """Переопределяем find_one_or_none_by_id для загрузки room relationship"""
+        """Переопределяем find_one_or_none_by_id для загрузки room, trainer и bookings relationships"""
         logger.info(f"Поиск записи {self.model.__name__} по ID: {data_id}")
         try:
-            query = select(self.model).filter_by(id=data_id).options(selectinload(self.model.room))
+            query = (
+                select(self.model)
+                .filter_by(id=data_id)
+                .options(
+                    selectinload(self.model.room),
+                    selectinload(self.model.trainer),
+                    selectinload(self.model.bookings)
+                )
+            )
             result = await self._session.execute(query)
             record = result.scalar_one_or_none()
             if record:

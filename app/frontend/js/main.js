@@ -61,6 +61,77 @@ async function handleDeleteTraining(trainingId) {
     }
 }
 
+// Фильтрация и поиск тренировок
+function handleTrainingSearch() {
+    handleTrainingFilter();
+}
+
+function handleTrainingFilter() {
+    if (!window.allTrainings || !window.renderTrainings) return;
+
+    const searchInput = document.getElementById('trainingSearch');
+    const dateFilter = document.getElementById('dateFilter');
+    const availabilityFilter = document.getElementById('availabilityFilter');
+
+    const searchQuery = searchInput?.value || '';
+    const dateValue = dateFilter?.value || 'all';
+    const availabilityValue = availabilityFilter?.value || 'all';
+
+    let filtered = window.allTrainings;
+
+    // Поиск по названию или тренеру
+    if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        filtered = filtered.filter(training => {
+            const title = training.title?.toLowerCase() || '';
+            const trainerName = `${training.trainer?.first_name || ''} ${training.trainer?.last_name || ''}`.toLowerCase();
+            return title.includes(query) || trainerName.includes(query);
+        });
+    }
+
+    // Фильтр по дате
+    if (dateValue !== 'all') {
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+
+        filtered = filtered.filter(training => {
+            const trainingDate = new Date(training.date);
+            trainingDate.setHours(0, 0, 0, 0);
+
+            if (dateValue === 'today') {
+                return trainingDate.getTime() === now.getTime();
+            } else if (dateValue === 'week') {
+                const weekEnd = new Date(now);
+                weekEnd.setDate(weekEnd.getDate() + 7);
+                return trainingDate >= now && trainingDate <= weekEnd;
+            } else if (dateValue === 'month') {
+                const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                return trainingDate >= now && trainingDate <= monthEnd;
+            }
+            return true;
+        });
+    }
+
+    // Фильтр по доступности мест
+    if (availabilityValue !== 'all') {
+        filtered = filtered.filter(training => {
+            const bookingCount = training.booking_count || 0;
+            const capacity = training.room?.capacity || 0;
+            const isFull = bookingCount >= capacity;
+
+            if (availabilityValue === 'available') {
+                return !isFull;
+            } else if (availabilityValue === 'full') {
+                return isFull;
+            }
+            return true;
+        });
+    }
+
+    // Перерисовываем с сохранением значений фильтров
+    window.renderTrainings(filtered, searchQuery, dateValue, availabilityValue);
+}
+
 async function showCreateTrainingModal() {
     try {
         const rooms = await api.getAllRooms();

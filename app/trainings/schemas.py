@@ -23,6 +23,8 @@ class STrainingInfo(TrainingBase):
     trainer_id: int = Field(description="ID тренера")
     room_id: int = Field(description="ID помещения")
     room: SRoomInfo = Field(description="Помещение")
+    trainer: SUserShort = Field(description="Тренер")
+    booking_count: int = Field(default=0, description="Количество записавшихся")
 
     model_config = ConfigDict(from_attributes=True)
 

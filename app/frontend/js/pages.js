@@ -211,8 +211,9 @@ const pages = {
                 <div class="auth-card">
                     <h1 class="auth-title">Регистрация</h1>
                     <form id="registerForm" class="auth-form">
-                        ${components.formInput('text', 'name', 'Имя', true, 'Иван')}
-                        ${components.formInput('text', 'surname', 'Фамилия', true, 'Иванов')}
+                        ${components.formInput('text', 'name', 'Имя', true, 'Федор')}
+                        ${components.formInput('text', 'surname', 'Фамилия', true, 'Саранчук')}
+                        ${components.formInput('tel', 'phone_number', 'Номер телефона', true, '+375291234567')}
                         ${components.formInput('email', 'email', 'Email', true, 'example@email.com')}
                         ${components.formInput('password', 'password', 'Пароль', true, '••••••••')}
                         ${components.formInput('password', 'confirm_password', 'Подтвердите пароль', true, '••••••••')}
@@ -240,13 +241,14 @@ const pages = {
             const confirmPassword = formData.get('confirm_password');
             const name = formData.get('name');
             const surname = formData.get('surname');
+            const phoneNumber = formData.get('phone_number');
 
             if (password !== confirmPassword) {
                 utils.handleFormError(e.target, 'Пароли не совпадают');
                 return;
             }
 
-            const result = await authManager.register(email, password, confirmPassword, name, surname);
+            const result = await authManager.register(email, password, confirmPassword, name, surname, phoneNumber);
 
             if (result.success) {
                 utils.showNotification('Регистрация успешна! Войдите в систему.', 'success');
@@ -274,55 +276,95 @@ const pages = {
 
             const bookedTrainingIds = new Set(userBookings.map(b => b.training.id));
 
-            const content = `
-                <div class="container">
-                    <div class="page-header">
-                        <h1>Доступные тренировки</h1>
-                        ${user && (userRole === 'trainer' || userRole === 'admin') ? `
-                            <button class="btn btn-primary" onclick="showCreateTrainingModal()">
-                                Создать тренировку
-                            </button>
-                        ` : ''}
-                    </div>
-
-                    ${trainings.length === 0 ?
-                        components.emptyState('📅', 'Нет тренировок', 'Пока не добавлено ни одной тренировки')
-                    : `
-                        <div class="trainings-grid">
-                            ${trainings.map(training => {
-                                const isBooked = bookedTrainingIds.has(training.id);
-                                const actions = [];
-
-                                if (user && userRole === 'client') {
-                                    actions.push({
-                                        type: isBooked ? 'secondary' : 'primary',
-                                        text: isBooked ? '✓ Вы записаны' : 'Записаться',
-                                        onclick: `handleBookTraining(${training.id})`,
-                                        disabled: isBooked
-                                    });
-                                }
-
-                                if (user && (userRole === 'trainer' || userRole === 'admin')) {
-                                    actions.push({
-                                        type: 'secondary',
-                                        text: 'Редактировать',
-                                        onclick: `showEditTrainingModal(${training.id})`
-                                    });
-                                    actions.push({
-                                        type: 'danger',
-                                        text: 'Удалить',
-                                        onclick: `handleDeleteTraining(${training.id})`
-                                    });
-                                }
-
-                                return components.trainingCard(training, actions);
-                            }).join('')}
+            const renderTrainings = (filteredTrainings, searchQuery = '', dateValue = 'all', availabilityValue = 'all') => {
+                const content = `
+                    <div class="container">
+                        <div class="page-header">
+                            <h1>Доступные тренировки</h1>
+                            ${user && (userRole === 'trainer' || userRole === 'admin') ? `
+                                <button class="btn btn-primary" onclick="showCreateTrainingModal()">
+                                    Создать тренировку
+                                </button>
+                            ` : ''}
                         </div>
-                    `}
-                </div>
-            `;
 
-            document.getElementById('app').innerHTML = components.layout(content, user);
+                        <!-- Фильтры и поиск -->
+                        <div class="filters-section">
+                            <div class="search-box">
+                                <div class="search-input-wrapper">
+                                    <input type="text"
+                                           id="trainingSearch"
+                                           class="form-input"
+                                           placeholder="🔍 Поиск по названию или тренеру..."
+                                           value="${searchQuery}"
+                                           onkeypress="if(event.key === 'Enter') handleTrainingSearch()">
+                                    <button class="btn btn-primary search-btn" onclick="handleTrainingSearch()">
+                                        Найти
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="filter-controls">
+                                <select id="dateFilter" class="form-select" onchange="handleTrainingFilter()">
+                                    <option value="all" ${dateValue === 'all' ? 'selected' : ''}>Все даты</option>
+                                    <option value="today" ${dateValue === 'today' ? 'selected' : ''}>Сегодня</option>
+                                    <option value="week" ${dateValue === 'week' ? 'selected' : ''}>На этой неделе</option>
+                                    <option value="month" ${dateValue === 'month' ? 'selected' : ''}>В этом месяце</option>
+                                </select>
+                                <select id="availabilityFilter" class="form-select" onchange="handleTrainingFilter()">
+                                    <option value="all" ${availabilityValue === 'all' ? 'selected' : ''}>Все тренировки</option>
+                                    <option value="available" ${availabilityValue === 'available' ? 'selected' : ''}>Есть места</option>
+                                    <option value="full" ${availabilityValue === 'full' ? 'selected' : ''}>Мест нет</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        ${filteredTrainings.length === 0 ?
+                            components.emptyState('📅', 'Тренировки не найдены', 'Попробуйте изменить параметры поиска или фильтры')
+                        : `
+                            <div class="trainings-grid" id="trainingsGrid">
+                                ${filteredTrainings.map(training => {
+                                    const isBooked = bookedTrainingIds.has(training.id);
+                                    const actions = [];
+
+                                    if (user && userRole === 'client') {
+                                        actions.push({
+                                            type: isBooked ? 'secondary' : 'primary',
+                                            text: isBooked ? '✓ Вы записаны' : 'Записаться',
+                                            onclick: `handleBookTraining(${training.id})`,
+                                            disabled: isBooked,
+                                            checkFull: true
+                                        });
+                                    }
+
+                                    if (user && userRole === 'admin') {
+                                        actions.push({
+                                            type: 'secondary',
+                                            text: 'Редактировать',
+                                            onclick: `showEditTrainingModal(${training.id})`
+                                        });
+                                        actions.push({
+                                            type: 'danger',
+                                            text: 'Удалить',
+                                            onclick: `handleDeleteTraining(${training.id})`
+                                        });
+                                    }
+
+                                    return components.trainingCard(training, actions);
+                                }).join('')}
+                            </div>
+                        `}
+                    </div>
+                `;
+
+                document.getElementById('app').innerHTML = components.layout(content, user);
+            };
+
+            // Сохраняем данные в глобальную область для фильтрации
+            window.allTrainings = trainings;
+            window.bookedTrainingIds = bookedTrainingIds;
+            window.renderTrainings = renderTrainings;
+
+            renderTrainings(trainings);
         } catch (error) {
             utils.showNotification('Ошибка загрузки тренировок: ' + error.message, 'error');
         }
@@ -423,7 +465,7 @@ const pages = {
                                             ` : ''}
                                         </div>
                                         <div class="training-participants">
-                                            <h4>Участники (${clients.length}):</h4>
+                                            <h4>Участники (${clients.length}${training.room ? ` / ${training.room.capacity}` : ''}):</h4>
                                             ${clients.length === 0 ?
                                                 '<p class="no-participants">Пока нет записавшихся</p>'
                                             : `
@@ -433,6 +475,14 @@ const pages = {
                                                     `).join('')}
                                                 </ul>
                                             `}
+                                        </div>
+                                        <div class="training-actions">
+                                            <button class="btn btn-secondary" onclick="showEditTrainingModal(${training.id})">
+                                                Редактировать
+                                            </button>
+                                            <button class="btn btn-danger" onclick="handleDeleteTraining(${training.id})">
+                                                Удалить
+                                            </button>
                                         </div>
                                     </div>
                                 `;
@@ -590,7 +640,7 @@ const pages = {
                     const avgClientsPerTraining = totalTrainings > 0 ? (totalClients / totalTrainings).toFixed(1) : 0;
 
                     // Group by day of week
-                    const dayNames = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+                    const dayNames = ['Пнедельник', 'Вторник', 'Среда', 'Чтверг', 'Птница', 'Сббота', 'Вскресенье'];
                     const trainingsByDay = {};
                     const clientsByDay = {};
 
