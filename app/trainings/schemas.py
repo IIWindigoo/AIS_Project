@@ -34,9 +34,11 @@ class STrainingFilter(BaseModel):
 class STrainingUpd(BaseModel):
     title: str | None = None
     description: str | None = None
-    date: dt | None = None 
+    date: dt | None = None
     start_time: time | None = None
     end_time: time | None = None
+    trainer_id: int | None = None
+    room_id: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

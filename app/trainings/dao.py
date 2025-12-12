@@ -2,9 +2,10 @@ from app.dao.base import BaseDAO
 from app.trainings.models import Training
 from app.bookings.models import Booking
 
-from sqlalchemy import select
+from sqlalchemy import select, and_, or_
 from sqlalchemy.orm import selectinload
 from loguru import logger
+from datetime import date, time
 
 
 class TrainingDAO(BaseDAO):
@@ -72,4 +73,96 @@ class TrainingDAO(BaseDAO):
             return trainings
         except Exception as e:
             logger.error(f"Ошибка при поиске тренировок тренера {trainer_id}: {e}")
+            raise
+
+    async def check_time_conflicts(
+        self,
+        room_id: int,
+        trainer_id: int,
+        training_date: date,
+        start_time: time,
+        end_time: time,
+        exclude_training_id: int = None
+    ) -> tuple[bool, str | None]:
+        """
+        Проверяет конфликты времени для помещения И тренера одним запросом.
+        Возвращает кортеж: (есть_конфликт: bool, тип_конфликта: str | None)
+
+        Типы конфликтов:
+        - "room" - помещение занято
+        - "trainer" - тренер занят
+        - None - конфликтов нет
+        """
+        logger.info(
+            f"Проверка конфликтов для помещения {room_id} и тренера {trainer_id} "
+            f"на {training_date} с {start_time} до {end_time}"
+        )
+        try:
+            # Создаем условие пересечения временных интервалов
+            time_overlap = or_(
+                # Новая тренировка начинается во время существующей
+                and_(
+                    self.model.start_time <= start_time,
+                    self.model.end_time > start_time
+                ),
+                # Новая тренировка заканчивается во время существующей
+                and_(
+                    self.model.start_time < end_time,
+                    self.model.end_time >= end_time
+                ),
+                # Новая тренировка полностью покрывает существующую
+                and_(
+                    self.model.start_time >= start_time,
+                    self.model.end_time <= end_time
+                )
+            )
+
+            # Ищем конфликты по помещению ИЛИ тренеру одним запросом
+            query = select(self.model).where(
+                and_(
+                    self.model.date == training_date,
+                    or_(
+                        self.model.room_id == room_id,
+                        self.model.trainer_id == trainer_id
+                    ),
+                    time_overlap
+                )
+            )
+
+            # Если редактируем существующую тренировку, исключаем её из проверки
+            if exclude_training_id:
+                query = query.where(self.model.id != exclude_training_id)
+
+            result = await self._session.execute(query)
+            conflicting_trainings = result.scalars().all()
+
+            if not conflicting_trainings:
+                logger.info("Конфликтов не обнаружено")
+                return False, None
+
+            # Проверяем приоритет конфликтов: сначала помещение, потом тренер
+            for training in conflicting_trainings:
+                if training.room_id == room_id:
+                    logger.warning(
+                        f"Конфликт помещения: тренировка '{training.title}' "
+                        f"уже занимает помещение {room_id} на {training_date} "
+                        f"с {training.start_time} до {training.end_time}"
+                    )
+                    return True, "room"
+
+            # Если конфликта по помещению нет, проверяем тренера
+            for training in conflicting_trainings:
+                if training.trainer_id == trainer_id:
+                    logger.warning(
+                        f"Конфликт тренера: тренер {trainer_id} уже ведет тренировку '{training.title}' "
+                        f"на {training_date} с {training.start_time} до {training.end_time}"
+                    )
+                    return True, "trainer"
+
+            # Не должны сюда попасть, но на всякий случай
+            logger.info("Конфликтов не обнаружено")
+            return False, None
+
+        except Exception as e:
+            logger.error(f"Ошибка при проверке конфликтов: {e}")
             raise

@@ -1,12 +1,12 @@
 /* Root variables */
 :root {
-    --primary: #6366f1;
-    --primary-dark: #4f46e5;
-    --secondary: #8b5cf6;
+    --primary: #ff6b35;
+    --primary-dark: #e85a28;
+    --secondary: #ffb88c;
     --success: #10b981;
     --danger: #ef4444;
     --warning: #f59e0b;
-    --info: #3b82f6;
+    --info: #ff8c61;
     --light: #f3f4f6;
     --dark: #1f2937;
     --gray: #6b7280;
@@ -199,7 +199,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #ff6b35 0%, #ff8c61 100%);
     overflow: hidden;
 }
 
@@ -284,7 +284,7 @@ body {
 
 .btn-hero-primary {
     background: var(--white);
-    color: #667eea;
+    color: var(--primary);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
@@ -301,7 +301,7 @@ body {
 
 .btn-hero-secondary:hover {
     background: var(--white);
-    color: #667eea;
+    color: var(--primary);
     transform: translateY(-3px);
 }
 
@@ -337,7 +337,7 @@ body {
 }
 
 .cta-section {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #ff6b35 0%, #ff8c61 100%);
     color: var(--white);
     text-align: center;
 }
@@ -362,7 +362,7 @@ body {
 .section-divider {
     width: 80px;
     height: 4px;
-    background: linear-gradient(90deg, #667eea, #764ba2);
+    background: linear-gradient(90deg, #ff6b35, #ff8c61);
     margin: 0 auto;
     border-radius: 2px;
 }
@@ -400,7 +400,7 @@ body {
 .service-card:hover {
     transform: translateY(-10px);
     box-shadow: var(--shadow-lg);
-    border-color: #667eea;
+    border-color: var(--primary);
 }
 
 .service-icon {
@@ -435,7 +435,7 @@ body {
 .advantage-number {
     font-size: 3rem;
     font-weight: 900;
-    color: #667eea;
+    color: var(--primary);
     margin-bottom: 1rem;
     opacity: 0.3;
 }
@@ -474,7 +474,7 @@ body {
     display: inline-block;
     padding: 1rem 3rem;
     background: var(--white);
-    color: #667eea;
+    color: var(--primary);
     text-decoration: none;
     border-radius: 50px;
     font-size: 1.125rem;
@@ -572,17 +572,63 @@ body {
     color: var(--dark);
 }
 
-/* Filters Section */
-.filters-section {
+/* Trainings Layout with Sidebar */
+.trainings-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+/* Filters Sidebar */
+.filters-sidebar {
     background: var(--white);
     padding: 1.5rem;
     border-radius: 0.5rem;
     box-shadow: var(--shadow);
-    margin-bottom: 2rem;
+    height: fit-content;
+    position: sticky;
+    top: 80px;
 }
 
-.search-box {
-    margin-bottom: 1rem;
+.filters-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.filter-group {
+    margin-bottom: 1.5rem;
+}
+
+.filter-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filter-results {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.results-count {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* Trainings Content */
+.trainings-content {
+    min-width: 0;
 }
 
 .search-input-wrapper {
@@ -596,7 +642,21 @@ body {
 
 .search-btn {
     white-space: nowrap;
-    padding: 0.75rem 1.5rem;
+    padding: 0.75rem 1rem;
+    min-width: 50px;
+}
+
+/* Old filters section - keep for backwards compatibility */
+.filters-section {
+    background: var(--white);
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+}
+
+.search-box {
+    margin-bottom: 1rem;
 }
 
 .filter-controls {
@@ -1478,7 +1538,7 @@ body {
 }
 
 .stat-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #ff6b35 0%, #ff8c61 100%);
     color: var(--white);
     padding: 2rem;
     border-radius: 1rem;
@@ -1560,7 +1620,7 @@ body {
 .bar {
     width: 100%;
     min-height: 20px;
-    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(180deg, #ff6b35 0%, #ff8c61 100%);
     border-radius: 0.5rem 0.5rem 0 0;
     position: relative;
     transition: all 0.3s ease;
@@ -1602,6 +1662,26 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
+    /* Trainings Layout - стек на мобильных */
+    .trainings-layout {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .filters-sidebar {
+        position: static;
+        margin-bottom: 1rem;
+    }
+
+    .filters-title {
+        font-size: 1.125rem;
+    }
+
+    .search-btn {
+        padding: 0.75rem;
+        min-width: auto;
+    }
+
     .hero-main-title {
         font-size: 2.5rem;
     }

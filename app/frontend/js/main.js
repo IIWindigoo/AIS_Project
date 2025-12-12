@@ -132,6 +132,24 @@ function handleTrainingFilter() {
     window.renderTrainings(filtered, searchQuery, dateValue, availabilityValue);
 }
 
+function resetTrainingFilters() {
+    if (!window.allTrainings || !window.renderTrainings) return;
+
+    // Сбрасываем все фильтры
+    const searchInput = document.getElementById('trainingSearch');
+    const dateFilter = document.getElementById('dateFilter');
+    const availabilityFilter = document.getElementById('availabilityFilter');
+
+    if (searchInput) searchInput.value = '';
+    if (dateFilter) dateFilter.value = 'all';
+    if (availabilityFilter) availabilityFilter.value = 'all';
+
+    // Показываем все тренировки
+    window.renderTrainings(window.allTrainings, '', 'all', 'all');
+
+    utils.showNotification('Фильтры сброшены', 'info');
+}
+
 async function showCreateTrainingModal() {
     try {
         const rooms = await api.getAllRooms();

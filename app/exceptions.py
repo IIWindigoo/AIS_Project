@@ -75,5 +75,11 @@ MembershipIsActive = HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
 ActiveMembershipNofFound = HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
                                          detail="Активный абонемент не найден")
 
-OnlyForClient = HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
+OnlyForClient = HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                               detail="Доступ только для клиентов")
+
+RoomTimeConflictException = HTTPException(status_code=status.HTTP_409_CONFLICT,
+                                         detail="В это время помещение уже занято другой тренировкой")
+
+TrainerTimeConflictException = HTTPException(status_code=status.HTTP_409_CONFLICT,
+                                            detail="Тренер уже ведет другую тренировку в это время")

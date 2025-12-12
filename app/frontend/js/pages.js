@@ -288,71 +288,100 @@ const pages = {
                             ` : ''}
                         </div>
 
-                        <!-- Фильтры и поиск -->
-                        <div class="filters-section">
-                            <div class="search-box">
-                                <div class="search-input-wrapper">
-                                    <input type="text"
-                                           id="trainingSearch"
-                                           class="form-input"
-                                           placeholder="🔍 Поиск по названию или тренеру..."
-                                           value="${searchQuery}"
-                                           onkeypress="if(event.key === 'Enter') handleTrainingSearch()">
-                                    <button class="btn btn-primary search-btn" onclick="handleTrainingSearch()">
-                                        Найти
+                        <div class="trainings-layout">
+                            <!-- Боковая панель с фильтрами слева -->
+                            <aside class="filters-sidebar">
+                                <h2 class="filters-title">Фильтры</h2>
+
+                                <!-- Поиск -->
+                                <div class="filter-group">
+                                    <label class="filter-label">Поиск</label>
+                                    <div class="search-input-wrapper">
+                                        <input type="text"
+                                               id="trainingSearch"
+                                               class="form-input"
+                                               placeholder="Название или тренер..."
+                                               value="${searchQuery}"
+                                               onkeypress="if(event.key === 'Enter') handleTrainingSearch()">
+                                        <button class="btn btn-primary search-btn" onclick="handleTrainingSearch()">
+                                            🔍
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Фильтр по дате -->
+                                <div class="filter-group">
+                                    <label class="filter-label">По дате</label>
+                                    <select id="dateFilter" class="form-select" onchange="handleTrainingFilter()">
+                                        <option value="all" ${dateValue === 'all' ? 'selected' : ''}>Все даты</option>
+                                        <option value="today" ${dateValue === 'today' ? 'selected' : ''}>Сегодня</option>
+                                        <option value="week" ${dateValue === 'week' ? 'selected' : ''}>На этой неделе</option>
+                                        <option value="month" ${dateValue === 'month' ? 'selected' : ''}>В этом месяце</option>
+                                    </select>
+                                </div>
+
+                                <!-- Фильтр по доступности -->
+                                <div class="filter-group">
+                                    <label class="filter-label">Доступность</label>
+                                    <select id="availabilityFilter" class="form-select" onchange="handleTrainingFilter()">
+                                        <option value="all" ${availabilityValue === 'all' ? 'selected' : ''}>Все тренировки</option>
+                                        <option value="available" ${availabilityValue === 'available' ? 'selected' : ''}>Есть места</option>
+                                        <option value="full" ${availabilityValue === 'full' ? 'selected' : ''}>Мест нет</option>
+                                    </select>
+                                </div>
+
+                                <!-- Кнопка сброса фильтров -->
+                                <div class="filter-group">
+                                    <button class="btn btn-secondary btn-block" onclick="resetTrainingFilters()">
+                                        Сбросить фильтры
                                     </button>
                                 </div>
-                            </div>
-                            <div class="filter-controls">
-                                <select id="dateFilter" class="form-select" onchange="handleTrainingFilter()">
-                                    <option value="all" ${dateValue === 'all' ? 'selected' : ''}>Все даты</option>
-                                    <option value="today" ${dateValue === 'today' ? 'selected' : ''}>Сегодня</option>
-                                    <option value="week" ${dateValue === 'week' ? 'selected' : ''}>На этой неделе</option>
-                                    <option value="month" ${dateValue === 'month' ? 'selected' : ''}>В этом месяце</option>
-                                </select>
-                                <select id="availabilityFilter" class="form-select" onchange="handleTrainingFilter()">
-                                    <option value="all" ${availabilityValue === 'all' ? 'selected' : ''}>Все тренировки</option>
-                                    <option value="available" ${availabilityValue === 'available' ? 'selected' : ''}>Есть места</option>
-                                    <option value="full" ${availabilityValue === 'full' ? 'selected' : ''}>Мест нет</option>
-                                </select>
-                            </div>
+
+                                <!-- Счетчик результатов -->
+                                <div class="filter-results">
+                                    <span class="results-count">Найдено: ${filteredTrainings.length}</span>
+                                </div>
+                            </aside>
+
+                            <!-- Основной контент справа -->
+                            <main class="trainings-content">
+                                ${filteredTrainings.length === 0 ?
+                                    components.emptyState('📅', 'Тренировки не найдены', 'Попробуйте изменить параметры поиска или фильтры')
+                                : `
+                                    <div class="trainings-grid" id="trainingsGrid">
+                                        ${filteredTrainings.map(training => {
+                                            const isBooked = bookedTrainingIds.has(training.id);
+                                            const actions = [];
+
+                                            if (user && userRole === 'client') {
+                                                actions.push({
+                                                    type: isBooked ? 'secondary' : 'primary',
+                                                    text: isBooked ? '✓ Вы записаны' : 'Записаться',
+                                                    onclick: `handleBookTraining(${training.id})`,
+                                                    disabled: isBooked,
+                                                    checkFull: true
+                                                });
+                                            }
+
+                                            if (user && userRole === 'admin') {
+                                                actions.push({
+                                                    type: 'secondary',
+                                                    text: 'Редактировать',
+                                                    onclick: `showEditTrainingModal(${training.id})`
+                                                });
+                                                actions.push({
+                                                    type: 'danger',
+                                                    text: 'Удалить',
+                                                    onclick: `handleDeleteTraining(${training.id})`
+                                                });
+                                            }
+
+                                            return components.trainingCard(training, actions);
+                                        }).join('')}
+                                    </div>
+                                `}
+                            </main>
                         </div>
-
-                        ${filteredTrainings.length === 0 ?
-                            components.emptyState('📅', 'Тренировки не найдены', 'Попробуйте изменить параметры поиска или фильтры')
-                        : `
-                            <div class="trainings-grid" id="trainingsGrid">
-                                ${filteredTrainings.map(training => {
-                                    const isBooked = bookedTrainingIds.has(training.id);
-                                    const actions = [];
-
-                                    if (user && userRole === 'client') {
-                                        actions.push({
-                                            type: isBooked ? 'secondary' : 'primary',
-                                            text: isBooked ? '✓ Вы записаны' : 'Записаться',
-                                            onclick: `handleBookTraining(${training.id})`,
-                                            disabled: isBooked,
-                                            checkFull: true
-                                        });
-                                    }
-
-                                    if (user && userRole === 'admin') {
-                                        actions.push({
-                                            type: 'secondary',
-                                            text: 'Редактировать',
-                                            onclick: `showEditTrainingModal(${training.id})`
-                                        });
-                                        actions.push({
-                                            type: 'danger',
-                                            text: 'Удалить',
-                                            onclick: `handleDeleteTraining(${training.id})`
-                                        });
-                                    }
-
-                                    return components.trainingCard(training, actions);
-                                }).join('')}
-                            </div>
-                        `}
                     </div>
                 `;
 

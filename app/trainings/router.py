@@ -8,7 +8,8 @@ from app.trainings.schemas import (STrainingInfo, STrainingAdd, STrainingFilter,
                                    STrainingWithBookings)
 from app.dependencies.dao_dep import get_session_with_commit, get_session_without_commit
 from app.dependencies.auth_dep import get_current_trainer_admin_user, get_current_trainer_user
-from app.exceptions import TrainingNotFound, TrainingForbiddenException, TrainerNotFound, RoomNotFound
+from app.exceptions import (TrainingNotFound, TrainingForbiddenException, TrainerNotFound,
+                            RoomNotFound, RoomTimeConflictException, TrainerTimeConflictException)
 from app.users.models import User
 from app.users.dao import UsersDAO
 from app.rooms.dao import RoomDAO
@@ -56,6 +57,20 @@ async def create_training(training_data: STrainingAdd,
     room = await room_dao.find_one_or_none_by_id(training_data.room_id)
     if not room:
         raise RoomNotFound
+
+    # Проверка конфликтов времени для помещения И тренера (один запрос)
+    has_conflict, conflict_type = await training_dao.check_time_conflicts(
+        room_id=training_data.room_id,
+        trainer_id=training_data.trainer_id,
+        training_date=training_data.date,
+        start_time=training_data.start_time,
+        end_time=training_data.end_time
+    )
+    if has_conflict:
+        if conflict_type == "room":
+            raise RoomTimeConflictException
+        elif conflict_type == "trainer":
+            raise TrainerTimeConflictException
     # Добавление тренировки
     new_training = await training_dao.add(values=training_data)
     if new_training:
@@ -117,9 +132,35 @@ async def update_training(training_id: int,
     # Проверка: редактировать может админ или тренер, которому принадлежит тренировка
     if user_data.role.name != "admin" and training.trainer_id != user_data.id:
         raise TrainingForbiddenException
+
+    # Проверка конфликта времени, если изменяются дата, время, помещение или тренер
+    update_data = data.model_dump(exclude_unset=True)
+    if any(field in update_data for field in ['date', 'start_time', 'end_time', 'room_id', 'trainer_id']):
+        # Используем новые значения или старые, если не изменялись
+        check_room_id = update_data.get('room_id', training.room_id)
+        check_trainer_id = update_data.get('trainer_id', training.trainer_id)
+        check_date = update_data.get('date', training.date)
+        check_start_time = update_data.get('start_time', training.start_time)
+        check_end_time = update_data.get('end_time', training.end_time)
+
+        # Проверка конфликтов времени для помещения И тренера (один запрос)
+        has_conflict, conflict_type = await training_dao.check_time_conflicts(
+            room_id=check_room_id,
+            trainer_id=check_trainer_id,
+            training_date=check_date,
+            start_time=check_start_time,
+            end_time=check_end_time,
+            exclude_training_id=training_id  # Исключаем текущую тренировку
+        )
+        if has_conflict:
+            if conflict_type == "room":
+                raise RoomTimeConflictException
+            elif conflict_type == "trainer":
+                raise TrainerTimeConflictException
+
     # Обновление информации о тренировке
     filters = STrainingFilter(id=training_id)
-    update_values = STrainingUpd(**data.model_dump(exclude_unset=True))
+    update_values = STrainingUpd(**update_data)
     updated_count = await training_dao.update(
         filters=filters,
         values=update_values

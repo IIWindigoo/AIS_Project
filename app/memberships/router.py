@@ -35,6 +35,10 @@ async def create_sub_request(data: SSubReqCreate,
     subscription = await sub_dao.find_one_or_none_by_id(data.subscription_id)
     if not subscription:
         raise SubNotFound
+
+    # Деактивируем истекшие абонементы перед проверкой активных
+    await membership_dao.deactivate_expired_memberships()
+
     # Если есть активный абонемент, то подать новую заявку нельзя
     filters = SFilter(user_id=user_data.id, status="active")
     active_membership = await membership_dao.find_one_or_none(filters=filters)
@@ -112,7 +116,7 @@ async def get_all_requests(session: AsyncSession = Depends(get_session_without_c
     return await SubRequestDAO(session).find_requests_with_data()
 
 @router.get("/my/", response_model=SMembershipInfo, summary="Получить информацию о своем абонементе")
-async def get_my_membership(session: AsyncSession = Depends(get_session_without_commit),
+async def get_my_membership(session: AsyncSession = Depends(get_session_with_commit),
                             user_data: User = Depends(get_current_user)):
     """
     Клиент получает информацию о своем активном абонементе.
@@ -122,6 +126,10 @@ async def get_my_membership(session: AsyncSession = Depends(get_session_without_
     # Проверка, что только клиент может запрашивать свой абонемент
     if user_data.role.name != "client":
         raise OnlyForClient
+
+    # Деактивируем истекшие абонементы перед поиском
+    await membership_dao.deactivate_expired_memberships()
+
     # Поиск активного абонемента
     filters = SFilter(user_id=user_data.id, status="active")
     membership = await membership_dao.find_one_or_none(filters=filters)
